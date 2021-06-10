@@ -1,0 +1,54 @@
+version: "2"
+services:
+  redis:
+    image: redis
+    container_name: redis
+    command: redis-server --requirepass mypassword
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+  odoo1:
+    image: odoo:14
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./config:/etc/odoo
+      - ./addons:/mnt/extra-addons
+  odoo2:
+    image: odoo:14
+    depends_on:
+      - db
+    ports:
+      - "8070:8069"
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./config:/etc/odoo
+      - ./addons:/mnt/extra-addons
+  db:
+    image: postgres:12
+    depends_on:
+      - redis
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data/pgdata
+  nginx-proxy:
+    image: nginx
+    ports:
+      - 8000:8000
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/log:/var/log/nginx
+      - ./nginx/www:/var/www
+volumes:
+  odoo-web-data:
+  odoo-db-data:
